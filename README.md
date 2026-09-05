@@ -4,7 +4,7 @@ Autonomous upsell agent for a Razorpay merchant, with a machine-readable catalog
 an explainable cross-sell engine, a deterministic policy/guardrail layer, real
 (or mock) Razorpay checkout, a SQLite audit trail, and a custom console UI. Every
 piece below was actually run end-to-end (backend via curl, JS syntax-checked,
-18 tests passing) before being written up here.
+20 tests passing) before being written up here.
 
 ## Setup
 
@@ -73,7 +73,7 @@ you can point to.
 | `agent.py` | Conversational loop: parses chat messages into intents, handles the confirm/deny step, calls `actions.py` |
 | `main.py` | FastAPI app: REST endpoints + serves the console UI |
 | `static/index.html` | The console UI — custom HTML/CSS/JS, no framework, no template |
-| `test_suite.py` | 18 tests: catalog, scoring, policy gating, audit log, mock gateway, failure injection, full add→checkout flow |
+| `test_suite.py` | 20 tests: catalog, scoring, policy gating, audit log, mock gateway, failure injection, full add→checkout flow, pay page payment failure cart preservation |
 
 ## Verified demo flow
 
@@ -113,8 +113,8 @@ pip install pytest
 pytest test_suite.py -v
 ```
 
-18 passed, covering: catalog/scoring, policy gating (allow/confirm/block cases),
-audit log round-trip, mock gateway shape, forced-failure error handling, and two
+20 passed, covering: catalog/scoring, policy gating (allow/confirm/block cases),
+audit log round-trip, mock gateway shape, forced-failure error handling, cart preservation on payment failure, and two
 full add→confirm→checkout integration paths.
 
 ## Next steps if you have time left
