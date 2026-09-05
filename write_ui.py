@@ -1,0 +1,415 @@
+# write_ui.py
+from pathlib import Path
+
+HTML = r"""<!DOCTYPE html>
+<html lang="en" class="h-full bg-slate-950 text-slate-100">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Agentic Commerce Control Tower</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🤖</text></svg>">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<style>
+@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+.animate-fade-in { animation: fadeIn .3s ease-out forwards; }
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
+</style>
+</head>
+<body class="h-full flex flex-col overflow-hidden">
+
+<header class="bg-slate-900/80 backdrop-blur-md border-b border-slate-800 p-4 flex justify-between items-center z-50">
+    <div class="flex items-center gap-3">
+        <div class="w-10 h-10 bg-gradient-to-br from-emerald-400 to-teal-600 rounded-lg flex items-center justify-center shadow-lg shadow-emerald-500/20">
+            <i class="fas fa-robot text-white text-xl"></i>
+        </div>
+        <div>
+            <h1 class="text-xl font-bold text-white flex items-center gap-2">
+                Agentic Commerce Control Tower
+                <span class="align-middle text-[10px] px-1.5 py-0.5 rounded bg-slate-800 text-emerald-400 border border-slate-700 font-mono">v2.1</span>
+            </h1>
+            <p class="text-xs text-slate-400">Propose <i class="fas fa-arrow-right text-[10px] mx-1"></i> Confirm <i class="fas fa-arrow-right text-[10px] mx-1"></i> Act</p>
+        </div>
+    </div>
+    
+    <!-- Policy Stats Summary Header -->
+    <div class="flex items-center gap-4">
+        <div class="hidden md:flex items-center gap-2 text-xs font-mono bg-slate-950/80 px-3 py-1.5 rounded-lg border border-slate-800">
+            <span class="text-slate-400">Policy Stats:</span>
+            <span id="stat-allow" class="px-2 py-0.5 rounded bg-emerald-950/80 text-emerald-400 border border-emerald-800/60 font-semibold" title="Allowed Actions">Allow: 0</span>
+            <span id="stat-confirm" class="px-2 py-0.5 rounded bg-amber-950/80 text-amber-400 border border-amber-800/60 font-semibold" title="Confirmation Required">Confirm: 0</span>
+            <span id="stat-block" class="px-2 py-0.5 rounded bg-rose-950/80 text-rose-400 border border-rose-800/60 font-semibold" title="Blocked / Failed">Block: 0</span>
+        </div>
+
+        <div class="text-right hidden sm:block">
+            <p class="text-xs text-slate-500">Session ID</p>
+            <p class="text-sm font-mono text-emerald-400" id="session-id">loading...</p>
+        </div>
+
+        <button onclick="toggleAudit()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-sm flex items-center gap-2 transition border border-slate-700 shadow-md">
+            <i class="fas fa-shield-halved text-emerald-400"></i> Audit Trail
+        </button>
+    </div>
+</header>
+
+<main class="flex-1 flex overflow-hidden">
+    <section class="flex-1 flex flex-col border-r border-slate-800">
+        <div id="chat-container" class="flex-1 overflow-y-auto p-6 space-y-4 bg-slate-950"></div>
+        <div class="p-4 bg-slate-900/50 backdrop-blur border-t border-slate-800">
+            <div class="max-w-3xl mx-auto flex gap-3">
+                <input type="text" id="chat-input" onkeypress="if(event.key==='Enter') sendInput()"
+                    class="flex-1 bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    placeholder="Type a message... (e.g., 'add Aria X12', 'suggest something', 'checkout')">
+                <button onclick="sendInput()" class="px-6 py-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-semibold shadow-lg transition flex items-center gap-2">
+                    Send <i class="fas fa-paper-plane"></i>
+                </button>
+            </div>
+        </div>
+    </section>
+
+    <aside class="w-96 flex-col bg-slate-900/30 overflow-y-auto hidden lg:flex">
+        <div class="p-6 border-b border-slate-800">
+            <h2 class="text-lg font-semibold text-white flex items-center gap-2 mb-4">
+                <i class="fas fa-shopping-cart text-emerald-400"></i> Live Cart
+            </h2>
+            <div id="cart-items" class="space-y-3 min-h-[100px]">
+                <p class="text-slate-500 text-sm italic">Your cart is empty.</p>
+            </div>
+            <div class="mt-4 pt-4 border-t border-slate-800 flex justify-between items-center">
+                <span class="text-slate-400">Total</span>
+                <span id="cart-total" class="text-xl font-bold text-white">₹0.00</span>
+            </div>
+            <button id="checkout-btn" onclick="sendQuick('checkout')" class="w-full mt-4 py-3 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white rounded-xl font-semibold shadow-lg transition disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                Checkout
+            </button>
+        </div>
+        <div class="p-6 flex-1">
+            <h2 class="text-lg font-semibold text-white flex items-center gap-2 mb-4">
+                <i class="fas fa-lightbulb text-amber-400"></i> Smart Suggestions
+            </h2>
+            <div id="suggestions-container" class="space-y-3">
+                <p class="text-slate-500 text-sm italic">Ask the agent for pairings.</p>
+            </div>
+        </div>
+    </aside>
+</main>
+
+<!-- Audit Drawer -->
+<div id="audit-drawer" class="fixed inset-y-0 right-0 w-full sm:w-[540px] bg-slate-900 border-l border-slate-800 shadow-2xl transform translate-x-full transition-transform duration-300 z-50 flex flex-col">
+    <div class="p-4 border-b border-slate-800 flex justify-between items-center bg-slate-950">
+        <div>
+            <h2 class="text-lg font-bold text-white flex items-center gap-2">
+                <i class="fas fa-shield-halved text-emerald-400"></i> Audit Trail & Policy Logs
+            </h2>
+            <p class="text-xs text-slate-400 mt-0.5">Deterministic decision ledger (SQLite persistence)</p>
+        </div>
+        <button onclick="toggleAudit()" class="text-slate-400 hover:text-white transition p-1"><i class="fas fa-times text-xl"></i></button>
+    </div>
+
+    <!-- Scope Filter Tabs -->
+    <div class="px-4 py-3 bg-slate-900 border-b border-slate-800/80 flex items-center justify-between">
+        <div class="flex gap-2">
+            <button onclick="setAuditScope('session')" id="scope-session-btn" class="px-3 py-1.5 bg-emerald-600 text-white rounded-lg text-xs font-semibold shadow transition">
+                Current Session
+            </button>
+            <button onclick="setAuditScope('all')" id="scope-all-btn" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs font-semibold border border-slate-700 transition">
+                All System Logs
+            </button>
+        </div>
+        <button onclick="fetchAudit(); fetchAuditSummary();" class="text-xs text-slate-400 hover:text-emerald-400 transition flex items-center gap-1">
+            <i class="fas fa-rotate"></i> Refresh
+        </button>
+    </div>
+
+    <div id="audit-list" class="flex-1 overflow-y-auto p-4 space-y-3 font-mono text-xs"></div>
+</div>
+
+<script>
+"use strict";
+var sessionId = "session_" + Math.random().toString(36).slice(2, 10);
+var catalog = {};
+var auditScope = "session"; // "session" | "all"
+
+function el(id) { return document.getElementById(id); }
+function money(p) { return "₹" + ((p || 0) / 100).toFixed(2); }
+function escapeHtml(s) {
+  return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
+el("session-id").textContent = sessionId;
+
+window.addEventListener("load", function () {
+  addMessage("agent",
+    "👋 Welcome to the Agentic Commerce Control Tower! I can add items, suggest pairings and check out securely. Try:",
+    '<div class="flex flex-wrap gap-2 mt-3">'
+    + quick("add Aria X12", "+ Add Aria X12")
+    + quick("add Vela Book 14", "+ Add Vela Book 14")
+    + quick("suggest something", "💡 Suggest pairings")
+    + quick("checkout", "💳 Checkout")
+    + "</div>");
+  loadCatalog();
+  fetchCart();
+  fetchAudit();
+  fetchAuditSummary();
+});
+
+window.addEventListener("focus", function () {
+  fetchCart();
+  fetchAudit();
+  fetchAuditSummary();
+});
+
+function fetchCart() {
+  return fetch("/cart/" + encodeURIComponent(sessionId))
+    .then(function (r) { return r.json(); })
+    .then(function (data) {
+      if (data.cart) {
+        var skus = data.cart.map(function (item) { return item.id; });
+        updateCartUI(skus, data.cart_value_paise);
+      }
+    })
+    .catch(function () {});
+}
+
+function quick(cmd, label) {
+  return '<button onclick="sendQuick(\'' + cmd + '\')" class="px-3 py-1.5 bg-slate-700 hover:bg-emerald-600 text-white rounded-lg text-xs transition">' + label + "</button>";
+}
+
+function loadCatalog() {
+  return fetch("/catalog")
+    .then(function (r) { return r.json(); })
+    .then(function (data) {
+      (data.products || []).forEach(function (p) { catalog[p.id] = p; });
+    })
+    .catch(function (e) { addMessage("agent", "⚠️ Could not load catalog: " + e); });
+}
+
+function sendInput() {
+  var input = el("chat-input");
+  var text = (input.value || "").trim();
+  if (text) { input.value = ""; sendMessage(text); }
+}
+
+function sendQuick(text) { sendMessage(text); }
+
+function sendMessage(text) {
+  addMessage("user", text);
+  fetch("/chat", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ session_id: sessionId, message: text })
+  })
+  .then(function (r) { return r.json(); })
+  .then(function (data) {
+    var extra = "";
+    var st = data.result ? String(data.result.status || "").trim() : "";
+    var d = (data.result && data.result.data) ? data.result.data : {};
+
+    if (st === "needs_confirmation") {
+      extra += '<div class="flex gap-2 mt-3">'
+        + '<button onclick="sendQuick(\'yes\')" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-sm font-semibold">Yes, add it</button>'
+        + '<button onclick="sendQuick(\'no\')" class="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 text-slate-300 rounded-lg text-sm">No, cancel</button>'
+        + "</div>";
+    }
+
+    if (data.suggestions && data.suggestions.length) {
+      extra += '<div class="mt-3 space-y-2">';
+      data.suggestions.forEach(function (s) {
+        extra += '<div class="bg-slate-900/50 border border-slate-700 rounded-lg p-3 flex justify-between items-center">'
+          + '<div class="flex-1 mr-3">'
+          + '<p class="font-semibold text-emerald-400">' + escapeHtml(s.name) + "</p>"
+          + '<p class="text-xs text-slate-400 mt-1 italic">' + escapeHtml(s.reason) + "</p>"
+          + '<p class="text-sm text-white mt-1">' + money(s.price_paise) + "</p>"
+          + "</div>"
+          + '<button onclick="sendQuick(\'add ' + s.sku_id + '\')" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-semibold">+ Add</button>'
+          + "</div>";
+      });
+      extra += "</div>";
+      updateSidebarSuggestions(data.suggestions);
+    }
+
+    if (st === "checked_out") {
+      var link = d.payment_link || "#";
+      extra += '<div class="mt-3 p-3 bg-emerald-900/30 border border-emerald-700 rounded-lg">'
+        + '<p class="text-emerald-400 font-semibold"><i class="fas fa-check-circle mr-1"></i> Order placed!</p>'
+        + '<a href="' + link + '" target="_blank" class="mt-2 inline-block px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-sm font-semibold">Pay Now <i class="fas fa-external-link-alt ml-1"></i></a>'
+        + "</div>";
+    }
+
+    addMessage("agent", data.reply || "(no reply)", extra);
+
+    var cartItems = d.cart || d["cart "];
+    var cartVal = d.cart_value_paise || d["cart_value_paise "];
+    if (cartItems) { updateCartUI(cartItems, cartVal); }
+    
+    fetchAudit();
+    fetchAuditSummary();
+  })
+  .catch(function (e) { addMessage("agent", "⚠️ Chat error: " + e); });
+}
+
+function addMessage(sender, text, extraHtml) {
+  var container = el("chat-container");
+  var wrap = document.createElement("div");
+  wrap.className = "flex " + (sender === "user" ? "justify-end" : "justify-start") + " animate-fade-in";
+  var inner;
+  if (sender === "user") {
+    inner = '<div class="max-w-md bg-blue-600 text-white px-4 py-2 rounded-2xl rounded-br-none shadow-lg">' + escapeHtml(text) + "</div>";
+  } else {
+    inner = '<div class="max-w-lg bg-slate-800 text-slate-100 px-4 py-3 rounded-2xl rounded-bl-none shadow-lg border border-slate-700">'
+      + '<p class="whitespace-pre-wrap">' + escapeHtml(text) + "</p>"
+      + (extraHtml || "")
+      + "</div>";
+  }
+  wrap.innerHTML = inner;
+  container.appendChild(wrap);
+  container.scrollTop = container.scrollHeight;
+}
+
+function updateCartUI(items, totalPaise) {
+  var box = el("cart-items");
+  var total = el("cart-total");
+  var btn = el("checkout-btn");
+  if (!items || !items.length) {
+    box.innerHTML = '<p class="text-slate-500 text-sm italic">Your cart is empty.</p>';
+    total.textContent = money(0);
+    btn.disabled = true;
+    return;
+  }
+  var html = "";
+  items.forEach(function (sku) {
+    var p = catalog[sku];
+    html += '<div class="flex justify-between items-center bg-slate-800/50 p-2 rounded-lg animate-fade-in">'
+      + '<div><p class="text-sm font-medium text-white">' + escapeHtml(p ? p.name : sku) + "</p>"
+      + '<p class="text-xs text-slate-400">' + (p ? money(p.price_paise) : "") + "</p></div>"
+      + '<button onclick="sendQuick(\'remove ' + sku + '\')" class="text-slate-500 hover:text-rose-400 transition p-2"><i class="fas fa-trash-alt"></i></button>'
+      + "</div>";
+  });
+  box.innerHTML = html;
+  total.textContent = money(totalPaise);
+  btn.disabled = false;
+}
+
+function updateSidebarSuggestions(suggestions) {
+  var box = el("suggestions-container");
+  var html = "";
+  suggestions.forEach(function (s) {
+    html += '<div class="bg-slate-800/50 border border-slate-700 rounded-lg p-3 animate-fade-in">'
+      + '<div class="flex justify-between items-start">'
+      + '<p class="font-semibold text-emerald-400 text-sm">' + escapeHtml(s.name) + "</p>"
+      + '<button onclick="sendQuick(\'add ' + s.sku_id + '\')" class="px-2 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded text-xs">+ Add</button>'
+      + "</div>"
+      + '<p class="text-xs text-slate-400 mt-2 italic">' + escapeHtml(s.reason) + "</p>"
+      + '<p class="text-sm text-white mt-1">' + money(s.price_paise) + "</p>"
+      + "</div>";
+  });
+  box.innerHTML = html;
+}
+
+function toggleAudit() {
+  var drawer = el("audit-drawer");
+  drawer.classList.toggle("translate-x-full");
+  if (!drawer.classList.contains("translate-x-full")) {
+    fetchAudit();
+    fetchAuditSummary();
+  }
+}
+
+function setAuditScope(scope) {
+  auditScope = scope;
+  if (scope === "session") {
+    el("scope-session-btn").className = "px-3 py-1.5 bg-emerald-600 text-white rounded-lg text-xs font-semibold shadow transition";
+    el("scope-all-btn").className = "px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs font-semibold border border-slate-700 transition";
+  } else {
+    el("scope-all-btn").className = "px-3 py-1.5 bg-emerald-600 text-white rounded-lg text-xs font-semibold shadow transition";
+    el("scope-session-btn").className = "px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs font-semibold border border-slate-700 transition";
+  }
+  fetchAudit();
+  fetchAuditSummary();
+}
+
+function pretty(jsonStr) {
+  try {
+    if (typeof jsonStr === "object") return JSON.stringify(jsonStr, null, 2);
+    return JSON.stringify(JSON.parse(jsonStr), null, 2);
+  } catch (e) {
+    return String(jsonStr || "");
+  }
+}
+
+function formatDate(ts) {
+  if (!ts) return "";
+  var d = new Date(ts * 1000);
+  return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+}
+
+function fetchAuditSummary() {
+  var url = "/audit-summary" + (auditScope === "session" ? "?session_id=" + encodeURIComponent(sessionId) : "");
+  fetch(url)
+    .then(function (r) { return r.json(); })
+    .then(function (payload) {
+      var s = payload.summary || {};
+      el("stat-allow").textContent = "Allow: " + (s.allow || 0);
+      el("stat-confirm").textContent = "Confirm: " + (s.needs_confirmation || 0);
+      el("stat-block").textContent = "Block: " + ((s.block || 0) + (s.failed || 0));
+    })
+    .catch(function () {});
+}
+
+function fetchAudit() {
+  var param = auditScope === "session" ? "?session_id=" + encodeURIComponent(sessionId) : "?session_id=all";
+  fetch("/audit-logs" + param)
+    .then(function (r) { return r.json(); })
+    .then(function (payload) {
+      var logs = payload.trail || [];
+      var box = el("audit-list");
+      if (!logs.length) {
+        box.innerHTML = '<div class="p-6 text-center text-slate-500 space-y-2">'
+          + '<i class="fas fa-clipboard-list text-3xl mb-2 text-slate-600 block"></i>'
+          + '<p>No events logged ' + (auditScope === "session" ? 'for current session yet.' : 'in database.') + '</p>'
+          + (auditScope === "session" ? '<button onclick="setAuditScope(\'all\')" class="mt-2 text-emerald-400 hover:underline text-xs">View All System Logs</button>' : '')
+          + '</div>';
+        return;
+      }
+      var html = "";
+      logs.forEach(function (log) {
+        var color = "text-slate-400", bg = "bg-slate-700/50", border = "border-slate-700";
+        var dec = String(log.policy_decision || log.status || "").trim();
+        if (dec === "allow" || dec === "success" || dec === "captured") { color = "text-emerald-400"; bg = "bg-emerald-950/40"; border = "border-emerald-800/60"; }
+        if (dec === "needs_confirmation") { color = "text-amber-400"; bg = "bg-amber-950/40"; border = "border-amber-800/60"; }
+        if (dec === "block" || dec === "failed") { color = "text-rose-400"; bg = "bg-rose-950/40"; border = "border-rose-800/60"; }
+
+        html += '<div class="bg-slate-800/40 p-3.5 rounded-xl border ' + border + ' animate-fade-in">'
+          + '<div class="flex justify-between items-center mb-1.5">'
+          + '<div class="flex items-center gap-2">'
+          + '<span class="font-bold text-white text-sm">' + escapeHtml(log.action) + "</span>"
+          + '<span class="text-[10px] font-mono text-slate-400">(' + formatDate(log.ts) + ')</span>'
+          + '</div>'
+          + '<span class="' + color + ' ' + bg + ' px-2 py-0.5 rounded text-[10px] font-semibold uppercase border ' + border + '">' + escapeHtml(dec) + '</span>'
+          + '</div>'
+          + '<p class="text-slate-300 text-[11px] font-sans mb-1"><span class="text-slate-500">Reasoning:</span> ' + escapeHtml(log.reasoning || "N/A") + '</p>'
+          + '<p class="text-slate-400 text-[11px] font-sans mb-2"><span class="text-slate-500">Policy:</span> ' + escapeHtml(log.policy_reason || "N/A") + '</p>'
+          + '<details><summary class="text-slate-500 cursor-pointer hover:text-slate-300 text-[10px] select-none">View Details & Payload</summary>'
+          + '<div class="mt-2 space-y-1.5">'
+          + '<p class="text-[10px] text-slate-500 font-sans">Session: <span class="font-mono text-emerald-400">' + escapeHtml(log.session_id || "N/A") + '</span></p>'
+          + '<pre class="bg-slate-950 p-2 rounded text-slate-300 overflow-x-auto text-[10px] border border-slate-800"><span class="text-slate-500">// Input</span>\n' + escapeHtml(pretty(log.input_json)) + '</pre>'
+          + '<pre class="bg-slate-950 p-2 rounded text-slate-300 overflow-x-auto text-[10px] border border-slate-800"><span class="text-slate-500">// Output</span>\n' + escapeHtml(pretty(log.output_json)) + '</pre>'
+          + '</div>'
+          + '</details></div>';
+      });
+      box.innerHTML = html;
+    })
+    .catch(function (e) {
+      el("audit-list").innerHTML = '<p class="text-rose-400 p-4 text-center">⚠️ Error loading audit logs: ' + escapeHtml(e) + '</p>';
+    });
+}
+</script>
+</body>
+</html>
+"""
+
+static_dir = Path(__file__).parent / "static"
+static_dir.mkdir(exist_ok=True)
+(static_dir / "index.html").write_text(HTML, encoding="utf-8")
+print("Wrote", static_dir / "index.html")

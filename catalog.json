@@ -1,0 +1,29 @@
+{
+  "merchant": "DemoTech Store (test mode)",
+  "currency": "INR",
+  "products": [
+    { "id": "sku_phone_01", "name": "Aria X12 Smartphone", "category": "phones", "price_paise": 1999900, "margin_percent": 18, "stock": 42, "description": "Flagship 5G smartphone with 120Hz display and triple camera.", "tags": ["flagship", "5g"] },
+    { "id": "sku_case_01", "name": "Aria X12 Silicone Case", "category": "accessories", "price_paise": 79900, "margin_percent": 55, "stock": 210, "description": "Shock-absorbing silicone case for the Aria X12.", "tags": ["protection"] },
+    { "id": "sku_charger_01", "name": "65W Fast Charger", "category": "accessories", "price_paise": 149900, "margin_percent": 40, "stock": 130, "description": "GaN fast charger, compatible with all phones in the catalog.", "tags": ["charging"] },
+    { "id": "sku_buds_01", "name": "Pulse Wireless Earbuds", "category": "audio", "price_paise": 349900, "margin_percent": 35, "stock": 88, "description": "ANC wireless earbuds with 30-hour battery life.", "tags": ["audio", "wireless"] },
+    { "id": "sku_screen_01", "name": "Tempered Glass Screen Protector", "category": "accessories", "price_paise": 29900, "margin_percent": 60, "stock": 340, "description": "9H hardness tempered glass, fits Aria X12.", "tags": ["protection"] },
+    { "id": "sku_laptop_01", "name": "Vela Book 14 Laptop", "category": "laptops", "price_paise": 5499900, "margin_percent": 15, "stock": 24, "description": "14-inch ultrabook, 16GB RAM, ideal for work and study.", "tags": ["work", "flagship"] },
+    { "id": "sku_mouse_01", "name": "Vela Wireless Mouse", "category": "accessories", "price_paise": 129900, "margin_percent": 45, "stock": 150, "description": "Ergonomic wireless mouse, pairs instantly with Vela Book.", "tags": ["work"] },
+    { "id": "sku_sleeve_01", "name": "Vela Book 14 Sleeve", "category": "accessories", "price_paise": 99900, "margin_percent": 50, "stock": 175, "description": "Padded neoprene sleeve sized for the Vela Book 14.", "tags": ["protection", "work"] },
+    { "id": "sku_watch_01", "name": "Orbit SE Smartwatch", "category": "wearables", "price_paise": 899900, "margin_percent": 28, "stock": 60, "description": "Fitness-focused smartwatch with heart-rate and sleep tracking.", "tags": ["fitness", "wearable"] },
+    { "id": "sku_band_01", "name": "Orbit SE Extra Strap", "category": "accessories", "price_paise": 59900, "margin_percent": 58, "stock": 220, "description": "Spare silicone strap for the Orbit SE.", "tags": ["wearable"] },
+    { "id": "sku_hub_01", "name": "USB-C 7-in-1 Hub", "category": "accessories", "price_paise": 189900, "margin_percent": 42, "stock": 95, "description": "HDMI, USB-A, SD card and PD passthrough in one hub.", "tags": ["work", "connectivity"] },
+    { "id": "sku_stand_01", "name": "Aluminum Laptop Stand", "category": "accessories", "price_paise": 159900, "margin_percent": 48, "stock": 110, "description": "Adjustable-height stand for ergonomic laptop use.", "tags": ["work"] }
+  ],
+  "co_purchase_pairs": [
+    ["sku_phone_01", "sku_case_01"],
+    ["sku_phone_01", "sku_screen_01"],
+    ["sku_phone_01", "sku_charger_01"],
+    ["sku_phone_01", "sku_buds_01"],
+    ["sku_laptop_01", "sku_mouse_01"],
+    ["sku_laptop_01", "sku_sleeve_01"],
+    ["sku_laptop_01", "sku_hub_01"],
+    ["sku_laptop_01", "sku_stand_01"],
+    ["sku_watch_01", "sku_band_01"]
+  ]
+}
